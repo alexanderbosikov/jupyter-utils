@@ -16,8 +16,8 @@ def register_bq_magic():
         query = cell
         df = run_query(query)
 
+        ipy = get_ipython()
         if df_name:
-            ipy = get_ipython()
             ipy.user_ns[df_name] = df
         else:
             ipy.user_ns['df_temp'] = df
