@@ -2,10 +2,10 @@ from google.cloud import bigquery
 from google.cloud import bigquery_storage
 from tqdm.notebook import tqdm
 import pandas as pd
-from nb_utils import config
+from nb_utils.options import config
 
 def run_query(query):
-    cfg = options.bigquery
+    cfg = config.bigquery
     client = bigquery.Client(project=cfg.project_id)
     
     # --- DRY RUN ---
