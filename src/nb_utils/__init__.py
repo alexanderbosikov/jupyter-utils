@@ -1,4 +1,4 @@
 from .jupyter import enable
-import options
+from .config import options
 
 enable()
