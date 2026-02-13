@@ -1,4 +1,6 @@
-from .jupyter import enable
 from .options import config
+from . import jupyter
+from . import bigquery
+from . import tableau
 
-enable()
+jupyter.enable()
