@@ -36,7 +36,7 @@ def register_sql_magic():
         df_name = _parse_line(line)
         try:
             query = render_query(cell, ipy.user_ns)
-        except NameError as e:
+        except (NameError, ValueError) as e:
             print(f"❌ {e}")
             return
         df = _run_query(options.config.active(), query)

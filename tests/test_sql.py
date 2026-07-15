@@ -24,3 +24,26 @@ def test_missing_var_raises():
 
 def test_whitespace_insensitive():
     assert render_query("{{x}} {{ x }}", {"x": 1}) == "1 1"
+
+
+def test_jinja_control_blocks():
+    q = render_query(
+        "select * from t{% if flag %} where x in {{ xs }}{% endif %}",
+        {"flag": True, "xs": [1, 2]},
+    )
+    assert q == "select * from t where x in (1, 2)"
+    q = render_query("select * from t{% if flag %} where 1{% endif %}", {"flag": False})
+    assert q == "select * from t"
+
+
+def test_template_syntax_error():
+    with pytest.raises(ValueError):
+        render_query("{% if %}", {})
+
+
+def test_prepare_query():
+    from nb_utils.sql import prepare_query
+    assert prepare_query("select 1") == "select 1"  # без шаблона params не нужны
+    assert prepare_query("select {{ x }}", {"x": 5}) == "select 5"
+    with pytest.raises(NameError):  # шаблон есть, params нет, IPython не запущен
+        prepare_query("select {{ x }}")
