@@ -1145,7 +1145,6 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "polars" },
-    { name = "redshift-connector" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "seaborn" },
@@ -1153,25 +1152,24 @@ dependencies = [
     { name = "tqdm" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 bq = [
     { name = "google-cloud-bigquery" },
     { name = "google-cloud-bigquery-storage" },
     { name = "pyarrow" },
 ]
+dev = [
+    { name = "pytest" },
+]
+rs = [
+    { name = "redshift-connector" },
+]
 tableau = [
     { name = "tableauserverclient" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "google-cloud-bigquery", marker = "extra == 'bq'", specifier = ">=3.25,<4.0" },
-    { name = "google-cloud-bigquery-storage", marker = "extra == 'bq'", specifier = ">=2.25,<3.0" },
     { name = "ipywidgets", specifier = ">=8.1.8" },
     { name = "itables", specifier = ">=2.0" },
     { name = "jupyterlab", specifier = ">=4.5,<5.0" },
@@ -1180,19 +1178,22 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0,<3.0" },
     { name = "pandas", specifier = ">=2.2,<3.0" },
     { name = "polars", specifier = ">=1.31,<2.0" },
-    { name = "pyarrow", marker = "extra == 'bq'", specifier = ">=16.0" },
-    { name = "redshift-connector", specifier = ">=2.1.15" },
     { name = "scikit-learn", specifier = ">=1.6,<2.0" },
     { name = "scipy", specifier = ">=1.16,<2.0" },
     { name = "seaborn", specifier = ">=0.13,<1.0" },
     { name = "statsmodels", specifier = ">=0.14,<1.0" },
-    { name = "tableauserverclient", marker = "extra == 'tableau'", specifier = ">=0.32" },
     { name = "tqdm", specifier = ">=4.67,<5.0" },
 ]
-provides-extras = ["bq", "tableau"]
 
 [package.metadata.requires-dev]
+bq = [
+    { name = "google-cloud-bigquery", specifier = ">=3.25,<4.0" },
+    { name = "google-cloud-bigquery-storage", specifier = ">=2.25,<3.0" },
+    { name = "pyarrow", specifier = ">=16.0" },
+]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+rs = [{ name = "redshift-connector", specifier = ">=2.1.15" }]
+tableau = [{ name = "tableauserverclient", specifier = ">=0.32" }]
 
 [[package]]
 name = "jupyterlab"

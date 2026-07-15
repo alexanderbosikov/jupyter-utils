@@ -3,8 +3,9 @@ from . import jupyter
 
 jupyter.enable()
 
-# подмодуль -> extra-группа из pyproject (None — зависимости в основном наборе)
-_lazy = {"bigquery": "bq", "redshift": None, "tableau": "tableau"}
+# подмодуль -> dependency-group из pyproject; активный стек задаётся
+# в tool.uv.default-groups
+_lazy = {"bigquery": "bq", "redshift": "rs", "tableau": "tableau"}
 
 def __getattr__(name):
     if name in _lazy:
@@ -12,13 +13,11 @@ def __getattr__(name):
         try:
             mod = importlib.import_module(f".{name}", __name__)
         except ModuleNotFoundError as e:
-            extra = _lazy[name]
-            if extra:
-                raise ImportError(
-                    f"Для nb_utils.{name} не хватает зависимостей ({e.name}). "
-                    f"Установи: uv sync --extra {extra}"
-                ) from e
-            raise
+            raise ImportError(
+                f"Для nb_utils.{name} не хватает зависимостей ({e.name}). "
+                f"Установи: uv sync --group {_lazy[name]} "
+                f"(или добавь группу в tool.uv.default-groups)"
+            ) from e
         globals()[name] = mod
         return mod
     raise AttributeError(f"module 'nb_utils' has no attribute {name!r}")

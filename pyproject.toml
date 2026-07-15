@@ -19,24 +19,15 @@ dependencies = [
     "seaborn>=0.13,<1.0",
     "jupyterlab>=4.5,<5.0",
     "tqdm>=4.67,<5.0",
-    "redshift-connector>=2.1.15",
     "itables>=2.0",
     "ipywidgets>=8.1.8",
     "jupyterlabs-sql-codemirror>=1.0.0",
 ]
 
-[project.optional-dependencies]
-bq = [
-    "google-cloud-bigquery>=3.25,<4.0",
-    "google-cloud-bigquery-storage>=2.25,<3.0",
-    "pyarrow>=16.0",
-]
-tableau = [
-    "tableauserverclient>=0.32",
-]
-
 [tool.uv]
 package = true
+# текущий стек: какие бэкенды ставить при обычном uv sync
+default-groups = ["dev", "rs"]
 
 [build-system]
 requires = ["hatchling"]
@@ -45,6 +36,17 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+]
+rs = [
+    "redshift-connector>=2.1.15",
+]
+bq = [
+    "google-cloud-bigquery>=3.25,<4.0",
+    "google-cloud-bigquery-storage>=2.25,<3.0",
+    "pyarrow>=16.0",
+]
+tableau = [
+    "tableauserverclient>=0.32",
 ]
 
 [tool.hatch.build.targets.wheel]

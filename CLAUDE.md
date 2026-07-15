@@ -5,7 +5,7 @@
 ## Окружение и команды
 
 - Менеджер — **uv** (`uv sync`, `uv add <pkg>`), сборка hatchling, Python ≥ 3.12.
-- Зависимости BigQuery и Tableau — optional extras: `uv sync --extra bq` / `--extra tableau`. Без них соответствующий подмодуль при обращении даёт ImportError с подсказкой.
+- Зависимости всех бэкендов (Redshift, BigQuery, Tableau) — dependency-groups `rs`/`bq`/`tableau`; активный стек задаётся в `tool.uv.default-groups` в pyproject.toml (сейчас `["dev", "rs"]`) и ставится обычным `uv sync`. Без группы подмодуль при обращении даёт ImportError с подсказкой.
 - Тесты: `uv run pytest` (покрыт `options.py`); остальное проверяется вручную в Jupyter Lab.
 - `notebooks/` и `*.ipynb` в корне — личные scratch-анализы, к коду пакета отношения не имеют: не трогать и не учитывать при работе над пакетом.
 
