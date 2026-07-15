@@ -7,15 +7,15 @@ import nb_utils.options as options
 from nb_utils.sql import _notebook_ns
 
 
-def run_query(query, connection=None, params=None):
+def run_query(query, connection=None, params=None, verbose=True):
     """Выполняет запрос через соединение любого типа (по умолчанию — активное)."""
     cfg = options.resolve(connection)
     if cfg.type == "bigquery":
         from nb_utils import bigquery
-        return bigquery.run_query(query, cfg, params)
+        return bigquery.run_query(query, cfg, params, verbose)
     if cfg.type == "redshift":
         from nb_utils import redshift
-        return redshift.run_query(query, cfg, params)
+        return redshift.run_query(query, cfg, params, verbose)
     raise TypeError(f"Неизвестный тип соединения: {cfg.type!r}")
 
 
@@ -51,17 +51,20 @@ def run_query_by_period(query, start_date, end_date, step_days=7, connection=Non
     base = {**(_notebook_ns() or {}), **(params or {})}
     windows = list(_periods(start, end, step_days))
     dfs = []
+    total_rows = 0
     try:
         with tqdm(windows, desc="Периоды", unit="окно") as pbar:
             for win_start, win_end in pbar:
-                pbar.set_postfix_str(f"{win_start} → {win_end}")
+                pbar.set_postfix_str(f"{win_start} → {win_end}, строк: {total_rows:,}")
                 df = run_query(query, connection, {
                     **base,
                     "period_start": win_start.isoformat(),
                     "period_end": win_end.isoformat(),
-                })
+                }, verbose=False)
                 if df is not None:
                     dfs.append(df)
+                    total_rows += len(df)
+                    pbar.set_postfix_str(f"{win_start} → {win_end}, строк: {total_rows:,}")
     except KeyboardInterrupt:
         print(f"🚫 Прервано; собрано окон: {len(dfs)} из {len(windows)}")
     if not dfs:

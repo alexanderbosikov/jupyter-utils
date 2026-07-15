@@ -16,27 +16,28 @@ def _get_client(cfg):
     return _clients[cfg.project_id]
 
 
-def run_query(query, connection=None, params=None):
+def run_query(query, connection=None, params=None, verbose=True):
     query = prepare_query(query, params)
     cfg = options.resolve(connection, "bigquery")
     try:
-        return _run(cfg, query)
+        return _run(cfg, query, verbose)
     except (RefreshError, DefaultCredentialsError):
         relogin_adc()
         _clients.clear()  # клиенты держат старые credentials
-        return _run(cfg, query)
+        return _run(cfg, query, verbose)
 
 
-def _run(cfg, query):
+def _run(cfg, query, verbose=True):
+    log = print if verbose else (lambda *args: None)
     client = _get_client(cfg)
 
     # --- DRY RUN ---
     dry_cfg = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
-    print("▶ Проверка запроса...")
+    log("▶ Проверка запроса...")
     dry_job = client.query(query, job_config=dry_cfg)
 
     scanned_gb = dry_job.total_bytes_processed / (1024**3)
-    print(f"📊 Запрос обработает ~{scanned_gb:.2f} GB")
+    log(f"📊 Запрос обработает ~{scanned_gb:.2f} GB")
 
     # Пользовательское ограничение
     if scanned_gb > cfg.max_bytes_billed_gb:
@@ -46,7 +47,7 @@ def _run(cfg, query):
             return None
 
     # --- ВЫПОЛНЕНИЕ ЗАПРОСА ---
-    print("▶ Выполняю запрос...")
+    log("▶ Выполняю запрос...")
     job = client.query(query)
     row_iter = job.result()
 
@@ -54,9 +55,9 @@ def _run(cfg, query):
     if job.destination is None:
         rows = job.num_dml_affected_rows
         if rows is not None:
-            print(f"✓ {job.statement_type} выполнен. Затронуто строк: {rows:,}")
+            log(f"✓ {job.statement_type} выполнен. Затронуто строк: {rows:,}")
         else:
-            print(f"✓ Выполнено ({job.statement_type})")
+            log(f"✓ Выполнено ({job.statement_type})")
         return None
 
     temp_table = client.get_table(job.destination)
@@ -64,13 +65,13 @@ def _run(cfg, query):
 
     # --- REST API ---
     if not use_storage:
-        print(f"📦 Использую REST API ({temp_table.num_rows:,} строк)")
+        log(f"📦 Использую REST API ({temp_table.num_rows:,} строк)")
         df = pl.from_arrow(row_iter.to_arrow(create_bqstorage_client=False))
-        print(f"✓ Готово, строк: {len(df):,} (REST API)")
+        log(f"✓ Готово, строк: {len(df):,} (REST API)")
         return df
 
     # --- STORAGE API ---
-    print(f"🚀 Использую Storage API ({temp_table.num_rows:,} строк)")
+    log(f"🚀 Использую Storage API ({temp_table.num_rows:,} строк)")
     from google.cloud import bigquery_storage
     bqstorage_client = bigquery_storage.BigQueryReadClient()
     arrow_iter = row_iter.to_arrow_iterable(bqstorage_client=bqstorage_client)
@@ -82,5 +83,5 @@ def _run(cfg, query):
         total_rows += batch.num_rows
 
     df = pl.from_arrow(pa.Table.from_batches(batches))
-    print(f"✓ Готово, строк: {total_rows:,} (Storage API)")
+    log(f"✓ Готово, строк: {total_rows:,} (Storage API)")
     return df

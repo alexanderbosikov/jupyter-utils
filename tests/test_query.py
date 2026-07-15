@@ -22,7 +22,8 @@ def test_periods_remainder_window_shorter():
 def test_run_query_by_period_concats_and_injects(monkeypatch):
     calls = []
 
-    def fake_run_query(query, connection=None, params=None):
+    def fake_run_query(query, connection=None, params=None, verbose=True):
+        assert verbose is False  # цикл глушит рутинные принты клиентов
         calls.append((params["period_start"], params["period_end"]))
         return pl.DataFrame({"win": [params["period_start"]]})
 
@@ -35,7 +36,7 @@ def test_run_query_by_period_concats_and_injects(monkeypatch):
 def test_run_query_by_period_accepts_dates_and_extra_params(monkeypatch):
     seen = {}
 
-    def fake_run_query(query, connection=None, params=None):
+    def fake_run_query(query, connection=None, params=None, verbose=True):
         seen.update(params)
         return None
 

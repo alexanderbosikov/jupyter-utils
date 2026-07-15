@@ -94,7 +94,8 @@ def _cancel_backend(pid, cfg):
         pass
 
 
-def run_query(query, connection=None, params=None):
+def run_query(query, connection=None, params=None, verbose=True):
+    log = print if verbose else (lambda *args: None)
     query = prepare_query(query, params)
     cfg = options.resolve(connection, "redshift")
     conn = get_connection(cfg)
@@ -102,7 +103,7 @@ def run_query(query, connection=None, params=None):
         cursor.execute("SELECT pg_backend_pid()")
         backend_pid = cursor.fetchone()[0]
 
-        print("▶ Выполняю запрос...")
+        log("▶ Выполняю запрос...")
         try:
             cursor.execute(query)
         except KeyboardInterrupt:
@@ -113,7 +114,7 @@ def run_query(query, connection=None, params=None):
 
         if cursor.description is None:
             rows = cursor.rowcount
-            print(f"✓ Выполнено. Затронуто строк: {rows if rows >= 0 else '?'}")
+            log(f"✓ Выполнено. Затронуто строк: {rows if rows >= 0 else '?'}")
             return None
 
         cols = [d[0] for d in cursor.description]
@@ -121,7 +122,7 @@ def run_query(query, connection=None, params=None):
 
         if len(first_batch) < cfg.min_rows_for_progress:
             df = pl.DataFrame(first_batch, schema=cols, orient="row")
-            print(f"✓ Готово, строк: {len(df)}")
+            log(f"✓ Готово, строк: {len(df)}")
             return df
 
         dfs = [pl.DataFrame(first_batch, schema=cols, orient="row")]
@@ -146,5 +147,5 @@ def run_query(query, connection=None, params=None):
         # vertical_relaxed: типы чанков могут различаться (например, Null-колонка
         # в первом чанке против значений в следующих)
         df = pl.concat(dfs, how="vertical_relaxed")
-        print(f"✓ Готово, строк: {total_rows:,}")
+        log(f"✓ Готово, строк: {total_rows:,}")
         return df
