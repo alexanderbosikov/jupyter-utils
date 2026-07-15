@@ -83,11 +83,6 @@ def close_connections():
 atexit.register(close_connections)
 
 
-def run_file(path, connection=None, params=None):
-    with open(path) as f:
-        return run_query(f.read(), connection, params)
-
-
 def _cancel_backend(pid, cfg):
     try:
         # отдельное соединение: основное занято выполняющимся запросом

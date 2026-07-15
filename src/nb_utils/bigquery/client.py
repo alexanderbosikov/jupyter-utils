@@ -16,11 +16,6 @@ def _get_client(cfg):
     return _clients[cfg.project_id]
 
 
-def run_file(path, connection=None, params=None):
-    with open(path) as f:
-        return run_query(f.read(), connection, params)
-
-
 def run_query(query, connection=None, params=None):
     query = prepare_query(query, params)
     cfg = options.resolve(connection, "bigquery")
