@@ -114,7 +114,7 @@ def run_query(query, connection=None, params=None):
             _cancel_backend(backend_pid, cfg)
             _evict(cfg, conn)
             print("🚫 Запрос отменён")
-            return None
+            raise
 
         if cursor.description is None:
             rows = cursor.rowcount
@@ -146,7 +146,7 @@ def run_query(query, connection=None, params=None):
             _cancel_backend(backend_pid, cfg)
             _evict(cfg, conn)
             print("🚫 Загрузка прервана")
-            return None
+            raise
 
         # vertical_relaxed: типы чанков могут различаться (например, Null-колонка
         # в первом чанке против значений в следующих)

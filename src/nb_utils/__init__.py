@@ -1,4 +1,5 @@
 from .options import config
+from .query import run_query, run_query_by_period
 from . import jupyter
 
 jupyter.enable()

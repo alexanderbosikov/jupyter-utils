@@ -15,6 +15,8 @@
 src/nb_utils/
 ├── __init__.py      # side effects при import: регистрирует магики + itables
 ├── options.py       # config — глобальный синглтон настроек (nb_utils.config)
+├── sql.py           # jinja2-рендеринг запросов (render_query/prepare_query)
+├── query.py         # run_query (диспетчер по типу соединения), run_query_by_period
 ├── jupyter/         # магики %%sql и %connect, enable()
 ├── bigquery/        # run_query/run_file (polars), авто-relogin gcloud ADC
 ├── redshift/        # run_query/run_file (polars), пул соединений, IAM или user/password
@@ -31,7 +33,8 @@ src/nb_utils/
 - **Redshift держит пул соединений** (ключ — параметры подключения): перед переиспользованием `select 1`-проверка, TTL простоя `connection_ttl_sec` (600с), autocommit включён, при отмене запроса соединение выбрасывается из пула, atexit закрывает всё. Пароль — `password` или `password_cmd` (shell-команда, например чтение из Keychain).
 - **BigQuery**: возвращает polars (через Arrow), клиенты кэшируются per-project; при `RefreshError` (протухший ADC-токен) автоматически запускается `gcloud auth application-default login` и запрос повторяется.
 - Подмодули `bigquery`/`redshift`/`tableau` грузятся лениво через `__getattr__` в `__init__.py` — тяжёлые зависимости не тянутся, пока не нужны.
-- Оба клиента поддерживают отмену запроса по `KeyboardInterrupt` (Redshift — через `pg_cancel_backend`) и прогресс-бар tqdm для больших выгрузок; при dtype-конфликте между чанками Redshift используется `vertical_relaxed` concat.
+- **Запросы по окнам дат**: `nb_utils.run_query_by_period(query, start_date, end_date, step_days)` рендерит `{{ period_start }}`/`{{ period_end }}` (полуоткрытые окна `[start, end)`) и склеивает результаты; из магики — `%%sql start_date=... end_date=... step=7`. Ctrl+C возвращает собранное.
+- Отмена по `KeyboardInterrupt`: Redshift отменяет запрос через `pg_cancel_backend` и **пробрасывает исключение дальше** (магика его глушит); прогресс-бар tqdm для больших выгрузок; при dtype-конфликте между чанками Redshift используется `vertical_relaxed` concat.
 - SQL-подсветка ячеек `%%sql` в JupyterLab — labextension `jupyterlabs-sql-codemirror` (зависимость проекта, кода в пакете не требует).
 
 ## Конвенции

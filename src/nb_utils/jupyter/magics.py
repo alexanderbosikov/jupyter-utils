@@ -6,22 +6,12 @@ _sql_registered = False
 
 
 def _parse_line(line):
-    df_name = None
+    opts = {}
     for part in line.split():
-        if part.startswith("df_name="):
-            df_name = part.split("=", 1)[1]
-    return df_name
-
-
-def _run_query(cfg, query):
-    if cfg.type == "bigquery":
-        from nb_utils import bigquery
-        return bigquery.run_query(query, cfg)
-    if cfg.type == "redshift":
-        from nb_utils import redshift
-        return redshift.run_query(query, cfg)
-    print(f"❌ Неизвестный тип соединения: {cfg.type!r}")
-    return None
+        if "=" in part:
+            key, value = part.split("=", 1)
+            opts[key] = value
+    return opts
 
 
 def register_sql_magic():
@@ -32,17 +22,32 @@ def register_sql_magic():
     @register_cell_magic
     def sql(line, cell):
         import nb_utils.options as options
+        from nb_utils.query import run_query, run_query_by_period
+
         ipy = get_ipython()
-        df_name = _parse_line(line)
+        opts = _parse_line(line)
+        cfg = options.config.active()
         try:
-            query = render_query(cell, ipy.user_ns)
+            if "start_date" in opts and "end_date" in opts:
+                # период рендерится внутри run_query_by_period (там появляются
+                # {{ period_start }}/{{ period_end }}), сырую ячейку не трогаем
+                df = run_query_by_period(
+                    cell,
+                    opts["start_date"],
+                    opts["end_date"],
+                    step_days=int(opts.get("step", 7)),
+                    connection=cfg,
+                )
+            else:
+                df = run_query(render_query(cell, ipy.user_ns), cfg)
         except (NameError, ValueError) as e:
             print(f"❌ {e}")
             return
-        df = _run_query(options.config.active(), query)
+        except KeyboardInterrupt:
+            return  # сообщение уже напечатал клиент
         if df is None:
             return
-        ipy.user_ns[df_name or "df_temp"] = df
+        ipy.user_ns[opts.get("df_name") or "df_temp"] = df
         display(df)
 
     _sql_registered = True
