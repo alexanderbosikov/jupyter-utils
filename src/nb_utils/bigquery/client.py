@@ -4,6 +4,7 @@ import polars as pl
 import pyarrow as pa
 from tqdm.auto import tqdm
 import nb_utils.options as options
+from nb_utils.sql import render_query
 from .auth import relogin_adc
 
 _clients: dict[str, bigquery.Client] = {}
@@ -15,12 +16,14 @@ def _get_client(cfg):
     return _clients[cfg.project_id]
 
 
-def run_file(path, connection=None):
+def run_file(path, connection=None, params=None):
     with open(path) as f:
-        return run_query(f.read(), connection)
+        return run_query(f.read(), connection, params)
 
 
-def run_query(query, connection=None):
+def run_query(query, connection=None, params=None):
+    if params:
+        query = render_query(query, params)
     cfg = options.resolve(connection, "bigquery")
     try:
         return _run(cfg, query)

@@ -5,6 +5,7 @@ import redshift_connector
 import polars as pl
 from tqdm.auto import tqdm
 import nb_utils.options as options
+from nb_utils.sql import render_query
 
 _CHUNK_SIZE = 10000
 
@@ -82,9 +83,9 @@ def close_connections():
 atexit.register(close_connections)
 
 
-def run_file(path, connection=None):
+def run_file(path, connection=None, params=None):
     with open(path) as f:
-        return run_query(f.read(), connection)
+        return run_query(f.read(), connection, params)
 
 
 def _cancel_backend(pid, cfg):
@@ -98,7 +99,9 @@ def _cancel_backend(pid, cfg):
         pass
 
 
-def run_query(query, connection=None):
+def run_query(query, connection=None, params=None):
+    if params:
+        query = render_query(query, params)
     cfg = options.resolve(connection, "redshift")
     conn = get_connection(cfg)
     with conn.cursor() as cursor:
