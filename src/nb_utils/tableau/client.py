@@ -1,4 +1,3 @@
-import os
 import tableauserverclient as tsc
 import uuid
 import nb_utils.options as options
@@ -40,7 +39,7 @@ def overwrite_datasource(server, datasource, hyper_file):
 
     print(f"Overwrite job posted (ID: {job.id})")
     job = server.jobs.wait_for_job(job)
-    print("Job finished succesfully")
+    print("Job finished successfully")
     return datasource
 
 def delete_data(server, datasource, table_name, column_name, start_date, end_date):
@@ -79,7 +78,7 @@ def delete_data(server, datasource, table_name, column_name, start_date, end_dat
 
     print(f"Delete job posted (ID: {job.id})")
     job = server.jobs.wait_for_job(job)
-    print("Job finished succesfully")
+    print("Job finished successfully")
 
 def insert_data(server, datasource, table_name, hyper_file):
     actions = [
@@ -99,7 +98,7 @@ def insert_data(server, datasource, table_name, hyper_file):
     )
     print(f"Insert job posted (ID: {job.id})")
     job = server.jobs.wait_for_job(job)
-    print("Job finished succesfully")
+    print("Job finished successfully")
 
 def create_datasource_on_server(server, project_id, hyper_file):
     new_datasource = tsc.DatasourceItem(project_id)
@@ -108,5 +107,5 @@ def create_datasource_on_server(server, project_id, hyper_file):
 
     print(f"Create job posted (ID: {job.id})")
     job = server.jobs.wait_for_job(job)
-    print("Job finished succesfully")
+    print("Job finished successfully")
     return new_datasource

@@ -1,27 +1,51 @@
-[tool.poetry]
+[project]
 name = "jupyter-utils"
 version = "0.1.0"
 description = "Мои полезные утилиты для Jupyter Notebook"
-authors = ["Alexander Bosikov alexanderbosikov@gmail.com"]
 readme = "README.md"
-packages = [{include = "nb_utils", from = "src"}]
+authors = [
+    { name = "Alexander Bosikov", email = "alexanderbosikov@gmail.com" }
+]
+requires-python = ">=3.12"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-pandas = "^2.2"
-polars = "^1.31"
-numpy = "^2.0"
-scipy = "^1.16"
-scikit-learn = "^1.6"
-statsmodels = "^0.14"
-matplotlib = "^3.10"
-seaborn = "^0.13"
-jupyterlab = "^4.5"
-tqdm = "^4.67"
-google-cloud-bigquery = "^3.38"
-google-cloud-bigquery-storage = "^2.34"
+dependencies = [
+    "pandas>=2.2,<3.0",
+    "polars>=1.31,<2.0",
+    "numpy>=2.0,<3.0",
+    "scipy>=1.16,<2.0",
+    "scikit-learn>=1.6,<2.0",
+    "statsmodels>=0.14,<1.0",
+    "matplotlib>=3.10,<4.0",
+    "seaborn>=0.13,<1.0",
+    "jupyterlab>=4.5,<5.0",
+    "tqdm>=4.67,<5.0",
+    "redshift-connector>=2.1.15",
+    "itables>=2.0",
+    "ipywidgets>=8.1.8",
+    "jupyterlabs-sql-codemirror>=1.0.0",
+]
 
+[project.optional-dependencies]
+bq = [
+    "google-cloud-bigquery>=3.25,<4.0",
+    "google-cloud-bigquery-storage>=2.25,<3.0",
+    "pyarrow>=16.0",
+]
+tableau = [
+    "tableauserverclient>=0.32",
+]
+
+[tool.uv]
+package = true
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nb_utils"]
