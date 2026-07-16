@@ -28,7 +28,7 @@ dependencies = [
 [tool.uv]
 package = true
 # текущий стек: какие бэкенды ставить при обычном uv sync
-default-groups = ["dev", "rs"]
+default-groups = ["dev", "rs", "pdf"]
 
 [build-system]
 requires = ["hatchling"]
@@ -48,6 +48,9 @@ bq = [
 ]
 tableau = [
     "tableauserverclient>=0.32",
+]
+pdf = [
+    "nbconvert[webpdf]>=7.16",
 ]
 
 [tool.hatch.build.targets.wheel]
