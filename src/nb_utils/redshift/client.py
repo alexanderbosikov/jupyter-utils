@@ -121,11 +121,11 @@ def run_query(query, connection=None, params=None, verbose=True):
         first_batch = cursor.fetchmany(cfg.min_rows_for_progress)
 
         if len(first_batch) < cfg.min_rows_for_progress:
-            df = pl.DataFrame(first_batch, schema=cols, orient="row")
+            df = pl.DataFrame(first_batch, schema=cols, orient="row", infer_schema_length=None)
             log(f"✓ Готово, строк: {len(df)}")
             return df
 
-        dfs = [pl.DataFrame(first_batch, schema=cols, orient="row")]
+        dfs = [pl.DataFrame(first_batch, schema=cols, orient="row", infer_schema_length=None)]
         total_rows = len(first_batch)
 
         try:
@@ -135,7 +135,7 @@ def run_query(query, connection=None, params=None, verbose=True):
                     batch = cursor.fetchmany(_CHUNK_SIZE)
                     if not batch:
                         break
-                    dfs.append(pl.DataFrame(batch, schema=cols, orient="row"))
+                    dfs.append(pl.DataFrame(batch, schema=cols, orient="row", infer_schema_length=None))
                     total_rows += len(batch)
                     pbar.update(len(batch))
         except KeyboardInterrupt:

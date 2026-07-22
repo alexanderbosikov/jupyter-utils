@@ -1,5 +1,6 @@
 from .options import config
 from .query import run_query, run_query_by_period
+from .report import report_style
 from . import jupyter
 
 jupyter.enable()

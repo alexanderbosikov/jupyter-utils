@@ -1,4 +1,44 @@
+import re
+
 import jinja2
+
+_LEADING_LINE_COMMENT = "--"
+_LIMIT_TAIL_RE = re.compile(r"\blimit\s+(\d+|all)\b(\s+offset\s+\d+)?$", re.IGNORECASE | re.DOTALL)
+_SELECT_HEAD_RE = re.compile(r"^(select|with)\b", re.IGNORECASE)
+
+
+def _strip_leading_comments(sql):
+    """Отрезает ведущие -- и /* */ комментарии, чтобы найти первое ключевое слово."""
+    while True:
+        sql = sql.lstrip()
+        if sql.startswith(_LEADING_LINE_COMMENT):
+            nl = sql.find("\n")
+            if nl == -1:
+                return ""
+            sql = sql[nl + 1:]
+        elif sql.startswith("/*"):
+            end = sql.find("*/")
+            if end == -1:
+                return ""
+            sql = sql[end + 2:]
+        else:
+            return sql
+
+
+def apply_default_limit(query, limit):
+    """Дописывает `limit N` к SELECT-запросу, если лимит задан и его ещё нет.
+
+    Возвращает (query, applied). Не трогает не-SELECT (DML/DDL/explain) и запросы,
+    у которых уже есть завершающий limit. limit <= 0 или None — без изменений.
+    """
+    if not limit or limit <= 0:
+        return query, False
+    stripped = query.rstrip().rstrip(";").rstrip()
+    if not _SELECT_HEAD_RE.match(_strip_leading_comments(stripped)):
+        return query, False
+    if _LIMIT_TAIL_RE.search(stripped):
+        return query, False
+    return f"{stripped}\nlimit {limit}", True
 
 
 def _to_sql(value):

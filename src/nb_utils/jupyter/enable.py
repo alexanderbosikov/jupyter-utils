@@ -16,6 +16,10 @@ def enable():
         return
     try:
         import itables
-        itables.init_notebook_mode(all_interactive=True)
+        # connected=True: каждая таблица тянет DataTables с CDN независимо от
+        # ячейки init_notebook_mode — иначе таблицы не рендерятся в HTML-экспорте
+        # nbconvert (offline-бандл не резолвится в standalone-файле). Требует
+        # интернет в момент просмотра.
+        itables.init_notebook_mode(all_interactive=True, connected=True)
     except Exception as e:
         print(f"⚠️ nb_utils: не удалось включить itables: {e!r}")

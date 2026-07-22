@@ -32,6 +32,18 @@ user = "reader"
     assert conn.connection_ttl_sec == 600
 
 
+def test_default_limit_default_and_override(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(o, "CONFIG_FILE", tmp_path / "missing.toml")
+    assert o.NBUtilsOptions().default_limit == 1000  # дефолт без файла
+
+    cfg = make_config(tmp_path, monkeypatch, "default_limit = 5000\n")
+    assert cfg.default_limit == 5000
+
+    cfg = make_config(tmp_path, monkeypatch, 'default_limit = "big"\n')
+    assert cfg.default_limit == 1000  # мусор игнорируется, остаётся дефолт
+    assert "default_limit должен быть" in capsys.readouterr().out
+
+
 def test_type_aliases(tmp_path, monkeypatch):
     cfg = make_config(tmp_path, monkeypatch, """
 [connections.a]

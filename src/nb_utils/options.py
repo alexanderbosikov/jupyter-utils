@@ -99,6 +99,7 @@ class NBUtilsOptions:
         """Перечитывает ~/.config/nb_utils.toml, сбрасывая соединения к дефолтам."""
         self.connections = {"bq": BigQueryOptions(), "rs": RedshiftOptions()}
         self.tableau = TableauOptions()
+        self.default_limit = 1000  # дефолтный лимит строк для %%sql (0/None — без лимита)
 
         if not CONFIG_FILE.exists():
             return
@@ -133,6 +134,13 @@ class NBUtilsOptions:
                     setattr(self.tableau, key, value)
                 else:
                     print(f"⚠️ [tableau]: неизвестный параметр {key}")
+
+        dl = data.get("default_limit")
+        if dl is not None:
+            if isinstance(dl, int) and not isinstance(dl, bool) and dl >= 0:
+                self.default_limit = dl
+            else:
+                print(f"⚠️ default_limit должен быть неотрицательным целым, получено {dl!r}")
 
         default = data.get("default") or data.get("connection")
         if default:

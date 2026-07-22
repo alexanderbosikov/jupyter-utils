@@ -1,6 +1,6 @@
 from IPython.core.magic import register_cell_magic, register_line_magic
 
-from nb_utils.sql import render_query
+from nb_utils.sql import apply_default_limit, render_query
 
 _sql_registered = False
 
@@ -27,10 +27,19 @@ def register_sql_magic():
         ipy = get_ipython()
         opts = _parse_line(line)
         cfg = options.config.active()
+        if "limit" in opts:
+            try:
+                limit = int(opts["limit"])
+            except ValueError:
+                print(f"❌ limit должен быть числом, получено {opts['limit']!r}")
+                return
+        else:
+            limit = options.config.default_limit
         try:
             if "start_date" in opts and "end_date" in opts:
                 # период рендерится внутри run_query_by_period (там появляются
-                # {{ period_start }}/{{ period_end }}), сырую ячейку не трогаем
+                # {{ period_start }}/{{ period_end }}), сырую ячейку не трогаем.
+                # Лимит здесь не применяем — это режим массовой выгрузки по окнам.
                 df = run_query_by_period(
                     cell,
                     opts["start_date"],
@@ -39,7 +48,10 @@ def register_sql_magic():
                     connection=cfg,
                 )
             else:
-                df = run_query(render_query(cell, ipy.user_ns), cfg)
+                query, limited = apply_default_limit(render_query(cell, ipy.user_ns), limit)
+                if limited:
+                    print(f"⚠️ применён лимит {limit} строк (%%sql limit=0 чтобы снять)")
+                df = run_query(query, cfg)
         except (NameError, ValueError) as e:
             print(f"❌ {e}")
             return
