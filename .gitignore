@@ -209,3 +209,6 @@ __marimo__/
 # Personal scratch analyses (not part of the package)
 notebooks/
 Untitled*.ipynb
+
+# Claude Code local (machine-specific) settings — permissions allowlist etc.
+.claude/settings.local.json
