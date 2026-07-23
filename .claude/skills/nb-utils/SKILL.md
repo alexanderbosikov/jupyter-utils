@@ -1,6 +1,6 @@
 ---
 name: nb-utils
-description: Как правильно писать Python-код и Jupyter-ноутбуки с пакетом nb_utils (jupyter-utils) — запросы к Redshift/BigQuery через %%sql и run_query, jinja2-шаблоны в SQL, запросы по окнам дат, публикация в Tableau. Использовать всегда при написании кода/ноутбуков, где есть nb_utils, %%sql, run_query, run_query_by_period или выгрузка данных в Tableau.
+description: Как правильно писать Python-код и Jupyter-ноутбуки с пакетом nb_utils (jupyter-utils) — запросы к Redshift/BigQuery через %%sql и run_query, jinja2-шаблоны в SQL, дефолтный лимит и кэш результатов, запросы по окнам дат, оформление ноутбука для HTML/PDF-экспорта (report_style), публикация в Tableau. Использовать всегда при написании кода/ноутбуков, где есть nb_utils, %%sql, run_query, run_query_by_period, report_style или выгрузка/экспорт данных.
 ---
 
 # nb_utils: запросы к данным из ноутбуков
@@ -31,7 +31,26 @@ df = run_query(Path("query.sql").read_text())         # запрос из фай
 select ...
 ```
 
-Опции в строке магики: `df_name=my_df` — имя переменной результата; `start_date=... end_date=... step=7` — режим по окнам дат.
+Опции в строке магики (через пробел): `df_name=my_df` — имя переменной результата (иначе `df_temp`); `limit=N` / `limit=0` — лимит на ячейку (см. ниже); `cache` / `refresh` / `cache_ttl=N` — кэш (см. ниже); `start_date=... end_date=... step=7` — режим по окнам дат.
+
+## Дефолтный лимит
+
+Обычный `%%sql` дописывает `limit N` к SELECT/WITH, если своего `limit` нет — по `config.default_limit` (дефолт 1000); при срабатывании печатает `⚠️`. Переопределить на ячейку — `%%sql limit=5000`, снять — `%%sql limit=0`. **Не** применяется к `run_query` и к режиму по окнам (`start_date=/end_date=`). Если выборка выглядит «ровно 1000 строк» — скорее всего сработал дефолтный лимит.
+
+## Кэш результатов
+
+Результат можно кэшировать на диск (parquet, `~/.cache/nb_utils/queries/`) — переживает рестарт kernel:
+
+```python
+df = run_query(sql, cache=True)                  # 1-й раз выполнит и сохранит, потом — из кэша
+df = run_query(sql, cache=True, refresh=True)     # данные в БД обновились — перезапросить
+df = run_query(sql, cache=True, cache_ttl=3600)   # TTL, сек (None → config.cache_ttl_sec)
+```
+
+- Ключ — хэш **отрендеренного** SQL + соединение: смена текста/параметров запроса инвалидирует кэш сама; «запрос тот же, данные обновились» — по TTL (дефолт 24ч) или `refresh=True`.
+- `cache=None` (дефолт) → `config.cache_default` (дефолт **False**). Из магики — `%%sql cache` / `%%sql refresh`.
+- Первый прогон **не быстрее** (miss → полный запрос → сохранение); ускоряются повторные запуски и после рестарта kernel.
+- DML (без результата) не кэшируется. Очистка — `nb_utils.clear_cache()` или `clear_cache(older_than_days=N)`. Файлы сами не удаляются.
 
 ## Jinja2-шаблоны в SQL
 
@@ -74,6 +93,10 @@ with tableau.Connection() as server:
 ```
 
 Креды — секция `[tableau]` в `~/.config/nb_utils.toml` (server_url, site_name, token_name, token_secret).
+
+## Экспорт отчётов (HTML/PDF)
+
+`nb_utils.report_style()` в ячейке — оформление ноутбука для экспорта nbconvert: колонка контента по центру, графики на всю ширину, кнопка «скрыть код», боковое оглавление-дерево со сворачиваемыми ветками. Действует **только в экспорте** (в живом JupyterLab вид не меняет). Экспортировать через File → Save and Export As → HTML с **Disable sanitize** — иначе JupyterLab вырежет `<style>`/`<script>`/кнопки, и ничего не применится. Параметры: `max_width`, `center`, `wide_plots`, `code_toggle`, `toc`, `avoid_breaks`. Ставить вызов можно в любом месте ячейки (сам себя отображает). Таблицы itables в HTML интерактивны при наличии интернета; в WebPDF — статичное превью.
 
 ## Стиль в ноутбуках
 
