@@ -11,7 +11,17 @@ def _parse_line(line):
         if "=" in part:
             key, value = part.split("=", 1)
             opts[key] = value
+        else:
+            opts[part] = True  # голый флаг: %%sql cache / refresh
     return opts
+
+
+def _flag(opts, name):
+    """None если флаг не задан; иначе bool (cache=0/false/no — выключить)."""
+    if name not in opts:
+        return None
+    v = opts[name]
+    return True if v is True else str(v).lower() not in ("0", "false", "no")
 
 
 def register_sql_magic():
@@ -35,6 +45,9 @@ def register_sql_magic():
                 return
         else:
             limit = options.config.default_limit
+        cache = _flag(opts, "cache")
+        refresh = bool(_flag(opts, "refresh"))
+        cache_ttl = int(opts["cache_ttl"]) if "cache_ttl" in opts else None
         try:
             if "start_date" in opts and "end_date" in opts:
                 # период рендерится внутри run_query_by_period (там появляются
@@ -46,12 +59,13 @@ def register_sql_magic():
                     opts["end_date"],
                     step_days=int(opts.get("step", 7)),
                     connection=cfg,
+                    cache=cache, cache_ttl=cache_ttl, refresh=refresh,
                 )
             else:
                 query, limited = apply_default_limit(render_query(cell, ipy.user_ns), limit)
                 if limited:
                     print(f"⚠️ применён лимит {limit} строк (%%sql limit=0 чтобы снять)")
-                df = run_query(query, cfg)
+                df = run_query(query, cfg, cache=cache, cache_ttl=cache_ttl, refresh=refresh)
         except (NameError, ValueError) as e:
             print(f"❌ {e}")
             return

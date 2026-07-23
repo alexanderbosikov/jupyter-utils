@@ -100,6 +100,8 @@ class NBUtilsOptions:
         self.connections = {"bq": BigQueryOptions(), "rs": RedshiftOptions()}
         self.tableau = TableauOptions()
         self.default_limit = 1000  # дефолтный лимит строк для %%sql (0/None — без лимита)
+        self.cache_default = False  # кэшировать ли результаты run_query по умолчанию
+        self.cache_ttl_sec = 86400  # TTL кэша запросов, сек (<=0 — без истечения)
 
         if not CONFIG_FILE.exists():
             return
@@ -141,6 +143,20 @@ class NBUtilsOptions:
                 self.default_limit = dl
             else:
                 print(f"⚠️ default_limit должен быть неотрицательным целым, получено {dl!r}")
+
+        cd = data.get("cache_default")
+        if cd is not None:
+            if isinstance(cd, bool):
+                self.cache_default = cd
+            else:
+                print(f"⚠️ cache_default должен быть true/false, получено {cd!r}")
+
+        ttl = data.get("cache_ttl_sec")
+        if ttl is not None:
+            if isinstance(ttl, int) and not isinstance(ttl, bool):
+                self.cache_ttl_sec = ttl
+            else:
+                print(f"⚠️ cache_ttl_sec должен быть целым (сек), получено {ttl!r}")
 
         default = data.get("default") or data.get("connection")
         if default:

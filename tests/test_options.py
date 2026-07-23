@@ -44,6 +44,19 @@ def test_default_limit_default_and_override(tmp_path, monkeypatch, capsys):
     assert "default_limit должен быть" in capsys.readouterr().out
 
 
+def test_cache_config(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(o, "CONFIG_FILE", tmp_path / "missing.toml")
+    cfg = o.NBUtilsOptions()
+    assert cfg.cache_default is False and cfg.cache_ttl_sec == 86400  # дефолты
+
+    cfg = make_config(tmp_path, monkeypatch, "cache_default = true\ncache_ttl_sec = 3600\n")
+    assert cfg.cache_default is True and cfg.cache_ttl_sec == 3600
+
+    cfg = make_config(tmp_path, monkeypatch, 'cache_default = "yes"\n')
+    assert cfg.cache_default is False  # мусор игнорируется
+    assert "cache_default должен быть" in capsys.readouterr().out
+
+
 def test_type_aliases(tmp_path, monkeypatch):
     cfg = make_config(tmp_path, monkeypatch, """
 [connections.a]
